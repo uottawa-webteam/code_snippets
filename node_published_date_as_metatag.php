@@ -1,21 +1,76 @@
+<?php 
+
+
+
+/***********************************************************************************************************
+   The following functions are used to create a node_published_date meta tag for basic pages and panel pages 
+
+************************************************************************************************************/
+
+/**
+* Dependencies : 
+* Metatag Module : https://www.drupal.org/project/metatag
+* Publication Date Module : https://www.drupal.org/project/publication_date
+**/
+
+
+/**
+ * Implements hook_metatag_config_default_alter().
+ * Add following functions to module.inc file (only required to run once)
+ */
+function hook_metatag_config_default_alter(&$config) {
+  if (!empty($config['global'])) {
+    $config['global']->config['node_published_date'] = array('value' => 0);
+  }
+}
+
+/**
+ * Implements hook_metatag_info().
+ * @author University of Ottawa Web Team
+ * Add following functions to module.inc file (only required to run once)
+ */
+function hook_metatag_info() {
+  $info = array();
+
+    $info['tags']['node_published_date'] = array(
+        'label' => t('Published Date for Node'),
+        'description' => t("The published/changed date for the Node, this takes whichever is the latest"),
+        'class' => 'DrupalTextMetaTag',
+        'context' => array('global'),
+        'group' => 'advanced',
+        'weight' => 224,
+    );
+  return $info;
+}
+
+
 
 /**
  * Implements hook_panels_prerender_panes_alter()
+ * @author University of Ottawa Web Team
  * Used to get the latest published date information for the content snippets and nodes that the panel is composed of
+ * The date of the component that was updated most recently is used 
  * @param $pane_info
  */
 
-function uottawa_core_panels_prerender_panes_alter($pane_info) {
-    $expired = uottawa_core_is_panel_published_date_cache_expired();
+function hook_panels_prerender_panes_alter($pane_info) {
+    // check if the panel published date cache has expired 
+    $expired = uottawa_is_panel_published_date_cache_expired();
+    // if expired, get the panel published date again 
     if($expired){
+        //get all the panes 
         $panes = $pane_info->prepared["panes"];
         $date = 0;
+        // loop throght all the panes for the current page 
         foreach ($panes as $pane){
+            //get panel type 
             $pane_type = $pane->type;
+            // get panel configuration
             $pane_config= $pane->configuration;
             // Get Node Published Dates
             if($pane_type=="node" && isset($pane_config["nid"])){
                 $node_changed_date = node_last_changed($pane_config["nid"]);
+                //if this date is greater
                 if($node_changed_date > $date){
                     $date = $node_changed_date;
                 }
@@ -24,6 +79,7 @@ function uottawa_core_panels_prerender_panes_alter($pane_info) {
             // Get Content Snippet Published Dates
             if($pane_type=="snippet" && isset($pane_config["csid"])){
                 $cs_info = content_snippets_load($pane_config["csid"]);
+                //if this date is greater
                 if($cs_info->changed > $date){
                     $date = $cs_info->changed;
                 }
@@ -31,15 +87,15 @@ function uottawa_core_panels_prerender_panes_alter($pane_info) {
         }
 
         //Calling the caching function to set date
-        uottawa_core_set_panel_published_date_cache($date);
+        // this value will be used by the hook_metatag_metatags_view_alter to create the meta tag
+        uottawa_set_panel_published_date_cache($date);
     }
 
 }
 
 /**
- * @author Winnerjit Singh Rathor <wrathor@uottawa.ca>
  * Alter metatags before being cached.
- *
+ * @author University of Ottawa Web Team
  * This hook is invoked prior to the meta tags for a given page are cached.
  *
  * @param array $output
@@ -52,7 +108,7 @@ function uottawa_core_panels_prerender_panes_alter($pane_info) {
  *   All of the options used to generate the meta tags.
  */
 
-function uottawa_core_metatag_metatags_view_alter(&$output, $instance, $options) {
+function hook_metatag_metatags_view_alter(&$output, $instance, $options) {
     //check if the node_published_date exists in the meta outputs
     if (isset($output['node_published_date']['#attached']['drupal_add_html_head'][0][0]['#value'])) {
         if(isset($options["entity"])){
@@ -63,15 +119,9 @@ function uottawa_core_metatag_metatags_view_alter(&$output, $instance, $options)
             //default value of the published date
             $published_date_ts = 0;
             //check if the published date value exists for this node
-            if(isset($options["entity"]->uottawa_publish_date["und"][0]{"value"})){
+            if(isset($options["entity"]->published_at){
                 //set the published date variable
-                $published_date = $options["entity"]->uottawa_publish_date["und"][0]{"value"};
-                //get date object from published date string (2019-04-08T01:00:00)
-                //Note T is being escaped here using /T as T also means Timezone in dateFormat
-                //Note: strtotime() does not work in this case because of presence  of / and - (Thu, 23/02/2012 - 15:18)
-                //https://www.hashbangcode.com/article/how-i-learned-stop-using-strtotime-and-love-php-datetime
-                $published_date_obj = DateTime::createFromFormat('Y-m-d\TH:i:s', $published_date);
-                $published_date_ts = $published_date_obj->getTimestamp();
+                $published_date_ts = $options["entity"]->published_at;
             }
 
             //check if $published_date is greater than $changed_date (Future Publication Date)
@@ -86,6 +136,7 @@ function uottawa_core_metatag_metatags_view_alter(&$output, $instance, $options)
             }
         }
 
+        //This checks if the current page is panel page and has a valid cache object 
         $cache_id = str_replace(array("/", "-"), '_', request_path())."_panel_published_date";
         $panel_cache_date = cache_get($cache_id) ? cache_get($cache_id) : 0;
 
@@ -97,22 +148,26 @@ function uottawa_core_metatag_metatags_view_alter(&$output, $instance, $options)
 }
 
 /**
- * Function to create the date cache for Panel pages
+ * Custom Function to create the date cache for Panel pages
+ * @author University of Ottawa Web Team
  * @param $date
  */
-function uottawa_core_set_panel_published_date_cache($date){
+function uottawa_set_panel_published_date_cache($date){
+    //cache id is based on the request_path() to make sure it is unique 
     $cache_id = str_replace(array("/", "-"), '_', request_path())."_panel_published_date";
     $old_cache_date = cache_get($cache_id) ? cache_get($cache_id) : 0;
+    //update only if the date has changed or the old date has been deleted 
     if((is_object($old_cache_date) && $date > $old_cache_date->data ) || (!is_object($old_cache_date) && $old_cache_date == 0)) {
         cache_set($cache_id, $date, "cache", time()+(86400)*7);
     }
 }
 
 /**
- * Function to check if the panel published date cache is 7 days old
+ * Custom Function to check if the panel published date cache is 7 days old
  * @return bool
  */
-function uottawa_core_is_panel_published_date_cache_expired(){
+function uottawa_is_panel_published_date_cache_expired(){
+    //cache id is based on the request_path() to make sure it is unique 
     $cache_id = str_replace(array("/", "-"), '_', request_path())."_panel_published_date";
     $old_cache_date = cache_get($cache_id) ? cache_get($cache_id) : 0;
     $cur_time = time();
@@ -123,3 +178,5 @@ function uottawa_core_is_panel_published_date_cache_expired(){
     }
     return TRUE;
 }
+
+?>
