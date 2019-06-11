@@ -1,0 +1,104 @@
+<requestHandler name="/uOttawa_en" class="solr.SearchHandler">
+  <!-- default values for query parameters can be specified, these
+       will be overridden by parameters in the request
+    -->
+  <lst name="defaults">
+    <str name="echoParams">all</str>
+    <int name="rows">10</int>
+    <str name="lowercaseOperators">true</str>
+    <str name="spellcheck">true</str>
+    <str name="spellcheck.dictionary">uoSpellcheck_en</str>
+    <str name="spellcheck.count">5</str>
+    <str name="spellcheck.onlyMorePopular">true</str>
+    <str name="spellcheck.extendedResults">true</str>
+    <str name="spellcheck.collate">true</str>
+    <str name="spellcheck.maxCollations">5</str>
+    <str name="hl">on</str>
+    <str name="hl.fl">content_ext_en,title_en,url,content_ext_und,title_und</str>
+    <str name="hl.fragsize">350</str>
+    <str name="f.content_ext_en.hl.fragsize">350</str>
+    <str name="f.title_en.hl.fragsize">100</str>
+    <str name="hl.encoder">html</str>
+    <str name="defType">edismax</str>
+    <str name="qf">content_ext_en^1.05 title_en^1.2 content_ext_und^1.05 title_und^1.2 url^1.1 nutch_lang keywords^1.0005 description</str>
+    <str name="bq">title_en:[ * TO * ]^2 OR title_und:[ * TO * ]^2</str>
+    <str name="bq">content_ext_en:[ * TO * ]^2 content_ext_und:[ * TO * ]^2</str>
+    <str name="pf">content_ext_en^2 title_en^3 content_ext_und^2 title_und^3 url^2.5</str>
+    <str name="ps">5</str>
+  </lst>
+  <lst name="appends">
+    <str name="fq">content_ext_en:[* TO *] OR content_ext_und:[* TO *]</str>
+  </lst>
+  <arr name="last-components">
+    <str>spellcheck</str>
+    <str>elevator_en</str>
+  </arr>
+  <lst name="invariants">
+    <str name="facet.field">facet_content_ext_en</str>
+    <str name="facet.field">facet_title_en</str>
+    <str name="facet.field">facet_content_ext_und</str>
+    <str name="facet.field">facet_title_und</str>
+    <str name="facet.field">description</str>
+    <str name="facet.field">keywords</str>
+    <str name="facet.field">site_name</str>
+    <str name="facet.mincount">2</str>
+    <str name="facet.limit">10</str>
+  </lst>
+</requestHandler>
+<requestHandler name="/uOttawa_fr" class="solr.SearchHandler">
+<!-- default values for query parameters can be specified, these
+     will be overridden by parameters in the request
+  -->
+<lst name="defaults">
+  <str name="echoParams">all</str>
+  <int name="rows">10</int>
+  <str name="lowercaseOperators">true</str>
+  <str name="spellcheck">true</str>
+  <str name="spellcheck.dictionary">uoSpellcheck_fr</str>
+  <str name="spellcheck.count">5</str>
+  <str name="spellcheck.onlyMorePopular">true</str>
+  <str name="spellcheck.extendedResults">true</str>
+  <str name="spellcheck.collate">true</str>
+  <str name="spellcheck.maxCollations">5</str>
+  <str name="hl">on</str>
+  <str name="hl.fl">content_ext_fr,title_fr,url,content_ext_und,title_und</str>
+  <str name="hl.fragsize">350</str>
+  <str name="f.content_ext_fr.hl.fragsize">350</str>
+  <str name="f.title_fr.hl.fragsize">100</str>
+  <str name="hl.encoder">html</str>
+  <str name="defType">edismax</str>
+  <str name="qf">content_ext_fr^1.05 title_fr^1.2 content_ext_und^1.05 title_und^1.2 url^1.1 nutch_lang keywords^1.0005 description</str>
+  <str name="bq">title_fr:[ * TO * ]^2 OR title_und:[ * TO * ]^2</str>
+  <str name="pf">content_ext_fr title_fr^3 content_ext_und^2 title_und^3 url^2.5</str>
+  <str name="ps">5</str>
+
+</lst>
+<lst name="appends">
+  <str name="fq">content_ext_fr:[* TO *] OR content_ext_und:[* TO *]</str>
+</lst>
+<arr name="last-components">
+  <str>spellcheck</str>
+  <str>elevator_fr</str>
+</arr>
+<lst name="invariants">
+  <str name="facet.field">facet_content_ext_fr</str>
+  <str name="facet.field">facet_title_fr</str>
+  <str name="facet.field">facet_content_ext_und</str>
+  <str name="facet.field">facet_title_und</str>
+  <str name="facet.field">description</str>
+  <str name="facet.field">keywords</str>
+  <str name="facet.field">site_name</str>
+  <str name="facet.mincount">2</str>
+  <str name="facet.limit">10</str>
+</lst>
+</requestHandler>
+<requestHandler name="/select" class="solr.SearchHandler">
+<!-- default values for query parameters can be specified, these
+     will be overridden by parameters in the request
+  -->
+<lst name="defaults">
+  <str name="echoParams">explicit</str>
+  <int name="rows">10</int>
+</lst>
+
+</requestHandler>
